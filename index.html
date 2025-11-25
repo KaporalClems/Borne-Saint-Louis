@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Borne Interactive - Ville de Saint-Louis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- CSS GÉRÉRAL --- */
+        :root {
+            --primary-color: #005bac; /* Bleu inspiré du logo */
+            --accent-color: #e84e1b; /* Orange/Rouge inspiré du logo */
+            --text-light: #ffffff;
+            --text-dark: #333333;
+            --modal-bg: rgba(255, 255, 255, 0.95);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            height: 100%;
+            font-family: 'Roboto', sans-serif;
+            overflow: hidden; /* Empêche le scroll sur la page principale */
+            background-color: #000;
+        }
+
+        /* --- VIDÉO DE FOND --- */
+        #bg-video {
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            z-index: -2;
+            object-fit: cover;
+        }
+
+        .video-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4); /* Assombrit la vidéo pour la lisibilité */
+            z-index: -1;
+        }
+
+        /* --- MODALE DE BIENVENUE (CODE POSTAL) --- */
+        #welcome-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 91, 172, 0.9); /* Fond bleu semi-transparent */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000; /* Au-dessus de tout */
+            backdrop-filter: blur(5px);
+        }
+
+        .welcome-content {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .welcome-content h2 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+
+        .welcome-content input {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.5rem;
+            text-align: center;
+            margin-bottom: 20px;
+            border: 2px solid var(--primary-color);
+            border-radius: 8px;
+        }
+
+        .welcome-content button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .welcome-content button:hover {
+            background-color: #c43d12;
+        }
+
+        /* --- INTERFACE PRINCIPALE --- */
+        #main-interface {
+            display: none; /* Caché par défaut */
+            height: 100%;
+            flex-direction: column;
+            /* Padding pour ne pas coller aux bords de l'écran */
+            padding: 30px;
+        }
+
+        /* Header avec Logo */
+        header {
+            flex: 0 1 auto;
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeInDown 1s ease-out;
+        }
+
+        .logo-img {
+            max-height: 150px;
+            width: auto;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+        }
+
+        /* Grille de boutons */
+        .menu-grid {
+            flex: 1 1 auto;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 30px;
+            max-width: 1000px;
+            margin: 0 auto;
+            width: 100%;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        .menu-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 20px;
+            color: var(--primary-color);
+            font-size: 1.8rem;
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: transform 0.2s, background 0.3s;
+            padding: 20px;
+        }
+
+        .menu-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Icônes (simulées avec des emojis pour simplifier, 
+           remplacer par FontAwesome ou SVG en prod) */
+        .btn-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .btn-fete-kann {
+             background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(232, 78, 27, 0.2) 100%);
+             color: var(--accent-color);
+        }
+
+
+        /* --- MODALES DE CONTENU --- */
+        .content-modal {
+            display: none; /* Caché par défaut */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+
+        .modal-container {
+            background: var(--modal-bg);
+            width: 90%;
+            height: 90%;
+            max-width: 1200px;
+            border-radius: 20px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-body {
+            flex: 1;
+            overflow-y: auto; /* Permet le scroll dans le contenu */
+            padding: 30px;
+            color: var(--text-dark);
+        }
+        
+        /* Styles spécifiques au contenu */
+        .pdf-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .programme-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .programme-flyer {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            max-height: 400px;
+            object-fit: contain;
+        }
+        .programme-text h2 { color: var(--accent-color); margin-top: 25px; margin-bottom: 10px; }
+        .programme-text h3 { color: var(--primary-color); margin-top: 20px; margin-bottom: 5px; }
+        .programme-text ul { margin-left: 25px; margin-bottom: 15px; }
+        .programme-text li { margin-bottom: 5px; font-size: 1.1rem; }
+        .programme-intro { font-size: 1.2rem; font-style: italic; margin-bottom: 20px; }
+        .programme-pratique { background: #f0f4f8; padding: 20px; border-radius: 10px; margin-top: 30px; }
+
+        /* Animations simples */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <video autoplay muted loop id="bg-video">
+        <source src="https://raw.githubusercontent.com/KaporalClems/Borne_Digital_DSR/726c69d5398a86b19d8ea8f327ca92601f981850/Destination%20Sud%20R%C3%A9union_HD.mp4" type="video/mp4">
+        Votre navigateur ne supporte pas la vidéo HTML5.
+    </video>
+    <div class="video-overlay"></div>
+
+    <div id="welcome-modal">
+        <div class="welcome-content">
+            <img src="https://saintlouis.re/images/Logos/Saint-Louis_Ville_de_passion.png" alt="Saint-Louis" style="max-height: 80px; margin-bottom: 20px;">
+            <h2>Bienvenue à Saint-Louis</h2>
+            <p style="margin-bottom: 20px; font-size: 1.2rem;">Pour commencer, veuillez saisir votre code postal :</p>
+            <input type="number" id="postal-input" placeholder="Ex: 97450" pattern="\d*">
+            <br>
+            <button id="validate-postal-btn">VALIDER & ACCÉDER</button>
+        </div>
+    </div>
+
+    <div id="main-interface">
+        <header>
+            <img src="https://saintlouis.re/images/Logos/Saint-Louis_Ville_de_passion.png" alt="Ville de Saint-Louis - Ville de passion" class="logo-img">
+        </header>
+
+        <div class="menu-grid">
+            <button class="menu-btn" onclick="openModal('modal-plan')">
+                <span class="btn-icon">🗺️</span>
+                Plan de la ville
+            </button>
+            
+            <button class="menu-btn btn-fete-kann" onclick="openModal('modal-programme')">
+                <span class="btn-icon">🎋</span>
+                Programme La Fèt Kann
+            </button>
+
+            <button class="menu-btn" onclick="openModal('modal-questionnaire')">
+                <span class="btn-icon">📋</span>
+                Questionnaire
+            </button>
+
+            <button class="menu-btn" onclick="openModal('modal-brochures')">
+                <span class="btn-icon">📰</span>
+                Brochures
+            </button>
+        </div>
+    </div>
+
+    <div id="modal-plan" class="content-modal">
+        <div class="modal-container">
+            <button class="close-btn" onclick="closeModal('modal-plan')">X</button>
+            <div class="modal-body" style="padding: 0;">
+                <iframe src="https://raw.githubusercontent.com/KaporalClems/borne-vital-sport/401fda66fd86129a564dd2c8e4d22f48c032f086/Saint_Louis_-_francais_anglais.pdf" class="pdf-frame"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-programme" class="content-modal">
+        <div class="modal-container">
+            <button class="close-btn" onclick="closeModal('modal-programme')">X</button>
+            <div class="modal-body programme-text">
+                <div class="programme-header">
+                    <img src="https://guide-reunion.fr/fileadmin/_processed_/a/d/csm_fete-canne-a-sucre-saint-louis_4fdf4e74b7.jpg" alt="Flyer Fèt Kann" class="programme-flyer">
+                    <h1>Programme Fèt Kann !</h1>
+                    <p class="programme-intro">"La canne à sucre : un héritage à célébrer. Du champ jusqu'à notre petit café du matin, laissez-vous conter l'histoire de la canne, cette petite note sucrée de notre patrimoine."</p>
+                </div>
+
+                <h2>Village de la canne (En continu)</h2>
+                <p><strong>Samedi 23 et dimanche 24 novembre 2024 | De 9h00 à 17h00</strong></p>
+                <ul>
+                    <li>Marché fruits et légumes & Marché artisanal</li>
+                    <li>Exposition d’engins agricoles</li>
+                    <li>Visite du Cachalot pédagogique de Tereos</li>
+                    <li>Exposition sur l’histoire de la canne</li>
+                    <li>Gonflables, Balades à charrettes, Jeux lontan</li>
+                    <li>Ateliers de fabrication d’instruments de musique traditionnelle</li>
+                    <li>Gâteau lontan, jus de canne et confitures maison</li>
+                </ul>
+
+                <h2>Samedi 23 novembre - Programme détaillé</h2>
+                <ul>
+                    <li><strong>9h00 :</strong> Conférence sur l’histoire de la canne et visite commentée du site avec les guides aventuriers</li>
+                    <li><strong>10h00 :</strong> Départ du défilé de charrettes au rythme de Perku 974 dans les rues du quartier</li>
+                    <li><strong>14h00 :</strong> Animation musicale avec Alpha 7</li>
+                    <li><strong>15h00 :</strong> Spectacle "Kozman Ti Dalon"</li>
+                    <li><strong>16h00 :</strong> Ambiance maloya avec Marmay la Kour et Zarlor</li>
+                </ul>
+
+                <h2>Dimanche 24 novembre - Programme détaillé</h2>
+                <ul>
+                    <li><strong>9h00 :</strong> Conférence sur l’histoire de la canne et visite commentée du site avec les guides aventuriers</li>
+                    <li><strong>10h00 :</strong> Ron'kozé sur le métier de cannier des débuts à nos jours, animé par le Département</li>
+                    <li><strong>11h00 :</strong> Animations musicales Séga Doss'</li>
+                    <li><strong>13h00 :</strong> Atelier de démonstration de fabrication de tambours malbars</li>
+                    <li><strong>16h00 :</strong> Animations musicales : Kozman Ti Dalon, Aïssya, Jean Roland Miquel</li>
+                </ul>
+
+                <div class="programme-pratique">
+                    <h3>ℹ️ La fèt Kann en pratique</h3>
+                    <p><strong>Lieu :</strong> Site de Moulin Maïs, Bois de Nèfles Cocos Saint-Louis</p>
+                    <p><strong>Contacts :</strong> 0692 86 76 90</p>
+                    <p style="text-align: center; margin-top: 10px; font-weight: bold; color: var(--accent-color);">Venez nombreux célébrer la canne avec nous !</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-questionnaire" class="content-modal">
+        <div class="modal-container">
+            <button class="close-btn" onclick="closeModal('modal-questionnaire')">X</button>
+            <div class="modal-body" style="text-align: center; display: flex; justify-content: center; align-items: center; flex-direction: column;">
+               <h2>Votre avis nous intéresse !</h2>
+               <p>Le module de questionnaire est en cours de construction.</p>
+               <span style="font-size: 5rem;">📋</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-brochures" class="content-modal">
+        <div class="modal-container">
+            <button class="close-btn" onclick="closeModal('modal-brochures')">X</button>
+            <div class="modal-body" style="text-align: center; display: flex; justify-content: center; align-items: center; flex-direction: column;">
+                <h2>Documentation et Brochures</h2>
+                <p>Le kiosque numérique des brochures est bientôt disponible.</p>
+                <span style="font-size: 5rem;">📰</span>
+             </div>
+        </div>
+    </div>
+
+
+    <script>
+        /* --- LOGIQUE JAVASCRIPT --- */
+
+        // 1. Gestion de la modale de bienvenue (Code Postal)
+        const welcomeModal = document.getElementById('welcome-modal');
+        const mainInterface = document.getElementById('main-interface');
+        const postalInput = document.getElementById('postal-input');
+        const validateBtn = document.getElementById('validate-postal-btn');
+
+        validateBtn.addEventListener('click', function() {
+            const postalCode = postalInput.value;
+            // Validation simple : vérifier si ce n'est pas vide et si c'est numérique
+            // Pour une borne, on évite d'être trop strict pour ne pas frustrer l'utilisateur
+            if (postalCode && postalCode.length >= 2) {
+                // Cacher la modale de bienvenue avec une petite transition
+                welcomeModal.style.opacity = '0';
+                welcomeModal.style.transition = 'opacity 0.5s ease';
+                
+                setTimeout(() => {
+                    welcomeModal.style.display = 'none';
+                    // Afficher l'interface principale
+                    mainInterface.style.display = 'flex';
+                }, 500);
+
+            } else {
+                // Feedback simple en cas d'erreur (faire trembler le champ)
+                postalInput.style.border = "2px solid red";
+                setTimeout(() => { postalInput.style.border = "2px solid var(--primary-color)"; }, 500);
+            }
+        });
+
+        // Permettre la validation avec la touche "Entrée" si clavier physique présent
+        postalInput.addEventListener('keypress', function(e) {
+            if(e.key === 'Enter') {
+                validateBtn.click();
+            }
+        });
+
+
+        // 2. Gestion des modales de contenu (Ouverture/Fermeture)
+        
+        // Fonction pour ouvrir une modale spécifique
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'flex';
+                // Animation d'entrée simple
+                modal.querySelector('.modal-container').style.transform = 'scale(0.9)';
+                modal.querySelector('.modal-container').style.opacity = '0';
+                setTimeout(() => {
+                    modal.querySelector('.modal-container').style.transition = 'all 0.3s ease-out';
+                    modal.querySelector('.modal-container').style.transform = 'scale(1)';
+                    modal.querySelector('.modal-container').style.opacity = '1';
+                }, 10);
+            }
+        }
+
+        // Fonction pour fermer une modale spécifique
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                 // Animation de sortie
+                modal.querySelector('.modal-container').style.transform = 'scale(0.9)';
+                modal.querySelector('.modal-container').style.opacity = '0';
+                 setTimeout(() => {
+                    modal.style.display = 'none';
+                }, 300);
+            }
+        }
+
+        // Fermer la modale si on clique en dehors du contenu (sur le fond sombre)
+        window.onclick = function(event) {
+            if (event.target.classList.contains('content-modal')) {
+                closeModal(event.target.id);
+            }
+        }
+    </script>
+</body>
+</html>
